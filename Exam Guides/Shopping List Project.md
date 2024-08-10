@@ -29,7 +29,9 @@ $ git commit -m "Initial commit"
 ## Create the project code 
 
 - We need to create a `ShoppingList` and `Item` class. Put the `shoppingList.js` and `item.js` files in the `lib` folder, along with `next-id.js` file to handle object ID generation. 
-- PAY ATTENTION TO LINE 71 `filter` is a custom method overriding the build in `filter`. There are also other methods with same name as methods in `item.js`, so be careful!. 
+- PAY ATTENTION TO LINE 72 `filter` is a custom method overriding the build in `filter`. 
+- PAY ATTENTINO TO LINE 67, `forEach` is a custom method that iterates over `this.items`. 
+- There are also other methods with same name as methods in `item.js`, so be careful!. 
 
 lib/shoppingList.js
 
