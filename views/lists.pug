@@ -1,4 +1,18 @@
 extends layout 
 
 block main 
-  
+  if shoppingLists === undefined || shoppingLists.length === 0 
+    //- This creates a paragraph block with the ID tag no_list
+    p#no_list You don't have any shopping lists. Why not create one? 
+  else 
+    ul#lists 
+      each shoppingList in shoppingLists 
+        li(class=shoppingList.isPurchased() > "purchased" : "")
+          a(href=`/lists/${shoppingList.id}`)
+            h2= shoppingList.title 
+            p #{shoppingList.allPurchased().size()} / #{shoppingList.size()}
+          
+block headerLinks
+  //- this generates a div element with class of actions
+  .actions 
+    a.add(href="/lists/new") New List
