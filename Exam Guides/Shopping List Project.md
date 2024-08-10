@@ -28,10 +28,7 @@ $ git commit -m "Initial commit"
 
 ## Create the project code 
 
-- We need to create a `ShoppingList` and `Item` class. Put the `shoppingList.js` and `item.js` files in the `lib` folder, along with `next-id.js` file to handle object ID generation. 
-- PAY ATTENTION TO LINE 72 `filter` is a custom method overriding the build in `filter`. 
-- PAY ATTENTINO TO LINE 67, `forEach` is a custom method that iterates over `this.items`. 
-- There are also other methods with same name as methods in `item.js`, so be careful!. 
+We need to create a `ShoppingList` and `Item` class. Put the `shoppingList.js` and `item.js` files in the `lib` folder, along with `next-id.js` file to handle object ID generation. 
 
 lib/shoppingList.js
 
@@ -102,20 +99,22 @@ class ShoppingList {
     return `${title}\n${list}`;
   }
 
+  // custom method
   forEach(callback) {
     this.items.forEach(item => callback(item));
   }
-  
+
+  // custom method
   filter(callback) {
-    let newList = new ShoppingList(this.title);
-    this.forEach(item => {
-      if (callback(item)) {
-        newList.add(item);
+    let newList = new ShoppingList(this.title); // Create a new ShoppingList instance with the same title
+    this.forEach(item => { // Iterate over each item in this.items
+      if (callback(item)) { // Apply the callback function to each item
+        newList.add(item); // If the callback returns true, add the item to the new list
       }
     });
-
-    return newList;
+    return newList; // Return the new filtered ShoppingList
   }
+
 
   findByTitle(title) {
     return this.filter(item => item.title === title).first();
@@ -131,11 +130,13 @@ class ShoppingList {
     return this.items.findIndex(item => item.id === itemToFind.id); 
   }
 
+  // check if every item is purchased
   allPurchased() {
     return this.filter(item => item.isPurchased()); // isPurchased is a custom method
   }
 
-  allNotPurchased() {
+  // check if not all the items are purchased
+  notAllPurchased() {
     return this.filter(item => !item.isPurchased()); 
   }
 
@@ -222,7 +223,40 @@ Item.NOT_PURCHASED_MARKER = " ";
 module.exports = Item;
 ```
 
+## Be careful of these
 
+- PAY ATTENTION TO LINE 72 `filter` is a custom method overriding the build in `filter`. 
+- PAY ATTENTINO TO LINE 67, `forEach` is a custom method that iterates over `this.items`. 
+- There are also other methods with same name as methods in `item.js`, so be careful! like `isPurchased` line 44.
+
+## `findByTitle` infinite loop explained
+
+```js
+  // this involves three nested layers of callback -> careful of infinite loop
+  findByTitle(title) {
+    return this.filter(item => item.title === title);
+  }
+```
+
+- This code causes an infinite loop because of its interaction with `markPurchaed`. When the code below runs, the `markPurchased` method will keep calling itself infinitely. 
+- The issue is that  `this.findByTitle(title)` is currently returning a `shoppingList` object, which gets assigned to the `item` variable. The `item` variable is supposed to be an `Item`  object that has the specific `title`, to which we can then call the `markPurchased()` method on that specific `Item` object. 
+
+```js
+  markPurchased(title) {
+    let item = this.findByTitle(title);
+    if (item !== undefined) {
+      item.markPurchased();
+    }
+  }
+```
+
+- This code is fixed here
+
+```js
+  findByTitle(title) {
+    return this.filter(item => item.title === title).first();
+  }
+```
 
 ## install Express and pug
 
