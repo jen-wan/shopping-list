@@ -270,6 +270,12 @@ $ npm install nodemon --save-dev
 
 - If you have some other modules that you want to install (e.g., `eslint`), you should do so now.
 
+```terminal
+$ npm install eslint --save-dev
+```
+
+
+
 ## Initial code
 
 Let's make sure everything is ready to go. First, create a minimal Express program configured to use Pug with logging by morgan. It displays a simple page from the `lists.pug` view template:
@@ -354,6 +360,28 @@ $ npm start
 ```
 
 Finally, point your browser to [http://localhost:3000](http://localhost:3000/). 
+
+## CSS & other static files
+
+- Configure application to use css stylesheets
+- Note that we use absolute path, not relative path. Relative path would fail. The leading `/` tells the browser to start from the root of the web server and look for the `stylesheets` directory.
+
+layout.pug
+
+```pug
+link(rel="stylesheet" href="/stylesheets/whitespace-reset.css")
+link(rel="stylesheet" href="/stylesheets/application.css")
+```
+
+- `express.static` is a built-in middleware function in Express that allows you to serve static files, such as HTML files, CSS stylesheets, images, and JavaScript files, from a directory on your server. 
+
+shopping.js
+
+```js
+app.use(express.static('public')); // tells Express to find static assets in the public directory
+```
+
+
 
 # create the html and css for the project
 
@@ -737,57 +765,59 @@ Go ahead and reload the application in your browser. It should display the list 
 
 # Sort the Todo Lists
 
-You may have noticed that the home page doesn't display the list of todo lists in any particular order. It shows them in the same sequence that we used in the `seed-data` module. Ideally, we'd like to sort the lists by title, with the done todo lists at the bottom of the list. Let's see how we can accomplish that.
+- We should sort the lists by title with the purchased lists at the bottom of the list.
+- Right now the home page doesn't display the list of shopping lists in any particular order. It shows them in the same sequence that we used in the `seed-data` module. 
 
 ## Where to Sort
 
 There are several places we can sort the list:
 
 - In the `seed-data` module.
+  - This is bad idea because 1) it's only seed data 2)  we won't use the module in the final program. 3) our application updates the data, then we'd have to resort it.
+
 - In the `views/lists.pug` view.
+  - We could sort using this thing called a "view helper"- which we won't cover right now because we don't usually use them unless two or more views need a shared functionality. That isn't the case with our sorting function or any of the view templates we'll create.
+  - The only time that we need a sorted list of todo lists is in the `lists` view, so a view helper isn't appropriate.
+
 - In the `todos.js` file.
-
-Sorting in the `seed-data` module wouldn't work too well. For one thing, it's only seed data. We won't use that module in the final program, so it's a poor place to implement sorting. Furthermore, our application updates the data. If we sorted the data before the user updated it, we'd only have to re-sort it.
-
-We could also sort the lists in the view by using something called a "view helper." We won't cover view helpers right now since we don't usually use them unless two or more views need some shared functionality. That isn't the case with our sorting function or any of the view templates that we'll create. The only time that we need a sorted list of todo lists is in the `lists` view, so a view helper isn't appropriate.
-
-That leaves the `todos.js` file. We can perform the sort just before we render the `lists` view, and pass the sorted lists to `res.render` for use by the view:
+  - We can perform the sort just before we render the `lists` view, and pass the sorted lists to `res.render` for use by the view:
 
 todos.js
 
+- renders the `lists.pug` view -- second parameter is object of local variables we want to pass to the view template
+
 ```js
-// Render the list of todo lists
-app.get("/", (req, res) => {
-  res.render("lists", {
-    todoLists: sortTodoLists(todoLists),
+// Render the list of shopping lists
+app.get("/", (req, res) => { // primary route for this application
+  res.render("lists", { 
+    shoppingLists: sortShoppingLists(shoppingLists)
   });
 });
 ```
 
 ## Sort by Title
 
-Let's define our `sortTodoLists` function now. It takes a single array argument that contains all of our todo lists, and it returns a new array that contains the sorted todo lists. For the moment, let's sort the list in the standard string order based on the todo list titles:
+- Let's define our `sortShoppingLists` function now. It takes a single array argument that contains all of our shopping lists, and it returns a new array that contains the sorted shopping lists. 
+- For the moment, let's sort the list in the standard string order based on the shopping list titles:
+- Then let's export this function, and import the module in `shopping.js`
 
-todos.js
+lib/sort.js
 
 ```js
-// Add this code just after the `app.use` invocations.
-
-// return the list of todo lists sorted by completion status and title.
-const sortTodoLists = lists => {
-  return lists.slice().sort((todoListA, todoListB) => {
-    let titleA = todoListA.title;
-    let titleB = todoListB.title;
-
-    if (titleA < titleB) {
+// return the list of shopping lists sorted by completion status and title.
+const sortShoppingLists = lists => {
+  return lists.slice().sort((listA, listB) => {
+    if (listA.title < listB.title) {
       return -1;
-    } else if (titleA > titleB) {
+    } else if (listA.title > listB.title) {
       return 1;
     } else {
       return 0;
     }
   });
 };
+
+module.exports = sortShoppingLists;
 ```
 
 Note that we called `slice` before sorting so that sorting doesn't mutate the original list as a side effect.
@@ -798,11 +828,11 @@ If you run the application now, you should see this in your browser:
 
 ![Sorted List of Todo Lists by title only](https://da77jsbdz4r05.cloudfront.net/images/js175/lesson_6/sort-the-todo-lists-01.png)
 
+<img src="C:\Users\jenny\AppData\Roaming\Typora\typora-user-images\image-20240811104557518.png" alt="image-20240811104557518" style="zoom:33%;" />
 
+## Move the Done Lists to the End
 
-## Move the Done Todo Lists to the End
-
-To move the done todo lists to the end of the sort sequence, we can expand the `sortTodoLists` function a bit:
+To move the done todo lists to the end of the sort sequence, we can expand the `sortShoppingLists` function a bit:
 
 todos.js
 
@@ -833,7 +863,7 @@ const sortTodoLists = lists => {
 };
 ```
 
-Since we want all of the completed todos to come after the undone todos, it makes sense to make that comparison first. When both todo lists have the same completion state, we can compare the titles.
+Since we want all of the completed lists to come after the undone lists, it makes sense to make that comparison first. When both todo lists have the same completion state, we can compare the titles.
 
 Go ahead and take a look at the list of todo lists now:
 

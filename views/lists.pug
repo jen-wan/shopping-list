@@ -7,7 +7,7 @@ block main
   else 
     ul#lists 
       each shoppingList in shoppingLists 
-        li(class=shoppingList.isPurchased() > "purchased" : "")
+        li(class=shoppingList.isDone() ? "done" : "")
           a(href=`/lists/${shoppingList.id}`)
             h2= shoppingList.title 
             p #{shoppingList.allPurchased().size()} / #{shoppingList.size()}

@@ -65,6 +65,23 @@ Let's break down what's happening in this diagram:
 
 This type of interaction is very much along the lines of what was happening with the simple HTTP server in the previous course.
 
+## Static files
+
+- Always use absolute paths for linking static files in your HTML or Pug templates to ensure that they are correctly received by the browser.
+
+<u>Why the Relative Path Fails</u>
+
+- When you use `./public/stylesheets/application.css`, the browser tries to find a `public` directory relative to the location of the current HTML page:
+- For example, if your page is served from `http://yourdomain/somepage`, the browser will look for `http://yourdomain/somepage/public/stylesheets/application.css`.
+- Since `public` is typically a directory on your server, not directly part of your URL structure, the browser won’t find the file at that location.
+
+ <u>Absolute Path (`/stylesheets/application.css`)</u>
+
+- **`/stylesheets/application.css`** is an absolute path.
+- The leading `/` tells the browser to start from the root of the web server and look for the `stylesheets` directory.
+- This works because Express or another server is configured to serve static files, often starting from a specific directory (like `public` in Express). 
+- When you use `/stylesheets/application.css`, the server knows to look for the `application.css` file inside the `public/stylesheets` directory (if `public` is configured as the static directory).
+
 ## Dynamic Content
 
 - Dynamic content is content that is created *on-the-fly,* in response to an HTTP request, via server-side processing. This processing often involves combining data with some templated HTML.
