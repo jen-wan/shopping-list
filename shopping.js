@@ -20,9 +20,18 @@ app.get("/", (req, res) => { // primary route for this application
   res.render("lists", {  // renders the lists.pug view -- second parameter is object of local variales we want to pass to the view template
     shoppingLists: sortShoppingLists(shoppingLists)
   });
+
 });
 
 // Listener
 app.listen(port, host, () => {
   console.log(`Shopping is listening on port ${port} of ${host}!`);
 });
+
+// test code
+// shoppingLists.forEach(obj => {
+//   let arrayOfItems = obj['items'];
+//   arrayOfItems.forEach(item => {
+//     console.log(`${item.title}: ${item.isPurchased()}`);
+//   }) 
+// });

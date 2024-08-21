@@ -945,7 +945,7 @@ Let's see what happens if some of our todo lists have lowercase titles. How will
 lib/seed-data.js
 
 ```js
-let todoList3 = new TodoList("Additional Todos");
+let shoppingList3 = new TodoList("Additional Todos");
 
 let todoList4 = new TodoList("social todos");
 todoList4.add(new Todo("Go to Libby's birthday party"));
