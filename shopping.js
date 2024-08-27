@@ -17,10 +17,19 @@ app.use(express.static('public')); // tells Express to find static assets in the
 
 // Render the list of shopping lists
 app.get("/", (req, res) => { // primary route for this application
-  res.render("lists", {  // renders the lists.pug view -- second parameter is object of local variales we want to pass to the view template
-    shoppingLists: sortShoppingLists(shoppingLists)
-  });
+  res.redirect("/lists");
+});
 
+// Render the list of shopping lists
+app.get("/lists", (req, res) => {
+  res.render("lists", {
+    shoppingLists: sortShoppingLists(shoppingLists),
+  });
+});
+
+// Render new todo list page
+app.get("/lists/new", (req, res) => {
+  res.render("new-list");
 });
 
 // Listener

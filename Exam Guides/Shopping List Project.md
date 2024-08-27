@@ -945,26 +945,26 @@ Let's see what happens if some of our todo lists have lowercase titles. How will
 lib/seed-data.js
 
 ```js
-let shoppingList3 = new TodoList("Additional Todos");
+let shoppingList3 = new ShoppingList("Additional Items");
 
-let todoList4 = new TodoList("social todos");
-todoList4.add(new Todo("Go to Libby's birthday party"));
+let shoppingList4 = new ShoppingList("birthday party items");
+shoppingList4.add(new Item("party hat"));
 
-let todoLists = [
-  todoList1,
-  todoList2,
-  todoList3,
-  todoList4,
+let shoppingLists = [
+  shoppingList1,
+  shoppingList2,
+  shoppingList3,
+  shoppingList4,
 ];
 ```
 
 The results should look like this:
 
+![image-20240821142710266](C:\Users\jenny\AppData\Roaming\Typora\typora-user-images\image-20240821142710266.png)
+
 
 
 ![Sorted List of Todo Lists by case-sensitive title and completion status](https://da77jsbdz4r05.cloudfront.net/images/js175/lesson_6/sort-the-todo-lists-03.png)
-
-
 
 Is that what we want? Perhaps, perhaps not. We sometimes want to distinguish between uppercase and lowercase strings. Often, though, we don't. In this case, we should sort the data in a case-insensitive manner:
 
@@ -988,7 +988,7 @@ const compareByTitle = (todoListA, todoListB) => {
 
 That should do the trick. Your browser should now show:
 
-
+![image-20240821142813131](C:\Users\jenny\AppData\Roaming\Typora\typora-user-images\image-20240821142813131.png)
 
 ![Sorted List of Todo Lists by case-insensitive title and completion status](https://da77jsbdz4r05.cloudfront.net/images/js175/lesson_6/sort-the-todo-lists-04.png)
 
@@ -1020,18 +1020,18 @@ To create this form, we need two things: a Pug view that describes the form and 
 
 views/new-list.pug
 
-```jade
+```pug
 extends layout
 
 block main
   form(action="/lists" method="post")
     dl
       dt
-        label(for="todoListTitle") Enter the title for your new list:
+        label(for="shoppingListTitle") Enter the title for your new list:
       dd
         input(type="text"
-              id="todoListTitle"
-              name="todoListTitle"
+              id="shoppingListTitle"
+              name="shoppingListTitle"
               placeholder="List Title")
 
     fieldset.actions
@@ -1039,13 +1039,29 @@ block main
       a(href="/lists") Cancel
 ```
 
-As with `lists.pug`, we first tell Pug to use `layout.pug` as the layout file, then define the main content area. The markup includes a `form`, which is a component that collects information from the user. The `action` and `method` attributes tell the browser what to do when the user submits the form; in this case, the browser should submit a POST request to the server with the path `/lists`, e.g., `http://localhost:3000/lists` in this case. Note that the `name` attribute on line 11 defines the name that we'll use to access this field: `todoListTitle`.
 
-Inside the form, we use a definition list (`dl`) to display a text label and an input box for the new todo list's title. We also have a `Save` button and a link to cancel the form.
+
+As with `lists.pug`, we first tell Pug to use `layout.pug` as the layout file, then define the main content area. 
+
+- The markup includes a `form`, which is a component that collects information from the user. 
+- The `action` and `method` attributes tell the browser what to do when the user submits the form; in this case, the browser should submit a POST request to the server with the path `/lists`, e.g., `http://localhost:3000/lists` in this case. 
+- Note that the `name` attribute on line 11 defines the name that we'll use to access this field: `shoppingListTitle`.
+
+- Inside the form, we use a definition list (`dl`) to display a text label and an input box for the new todo list's title. 
+- We also have a `Save` button and a link to cancel the form.
+
+#### input syntax review
+
+- `<input>`: This is an HTML element used to create interactive controls in a web form that users can use to enter data.
+- `type="text"`: This specifies that the input field will be for text. The user can type any text into this field.
+- `id="todoListTitle"`: The `id` attribute gives the input field a unique identifier. This can be used to reference the input field in JavaScript or to apply specific styles using CSS.
+- `name="todoListTitle"`: The `name` attribute is used to specify the name of the input field. When the form is submitted, this name will be used as the key in the data sent to the server. It’s also useful for identifying the field in server-side scripts or databases.
+- `placeholder="List Title"`: The `placeholder` attribute provides a hint or example text that appears in the input field before the user starts typing. In this case, “List Title” serves as a prompt to let users know what kind of information they should enter into the field.
 
 ## Defining a Route to the Form
 
-This part is straightforward: decide on what path we want to use, then implement an appropriate route. Our route processes GET method requests made to `/lists/new`:
+- Now we need to implement an appropriate route based on the path that we want to use. 
+- Our route processes GET method requests made to `/lists/new`:
 
 todos.js
 
@@ -1058,9 +1074,11 @@ app.get("/lists/new", (req, res) => {
 });
 ```
 
-That's all you need to do to render this form. Go ahead and reload the app to see the results. Note, however, that you can't submit it yet. Neither the `Save` nor the `Cancel` button is "hooked up" and ready to use. Let's do that next.
+- That's all you need to do to render this form. Go ahead and reload the app to see the results. Note, however, that you can't submit it yet. Neither the `Save` nor the `Cancel` button is "hooked up" and ready to use. Let's do that next.
 
-From time to time, especially in `todos.js`, we will tell you where to add code to the file. Mostly, it doesn't matter too much where you put the code, but there are places where it does. In particular, the `app.set` calls should be first, followed by `app.use`, then `app.get` and `app.post`, and, finally, `app.listen`. In addition, some specific `app.get`/`app.post` invocations can be order-dependent. We'll point those out as we come to them.
+- From time to time, especially in `todos.js`, we will tell you where to add code to the file. Mostly, it doesn't matter too much where you put the code, but there are places where it does. 
+
+- In particular, the `app.set` calls should be first, followed by `app.use`, then `app.get` and `app.post`, and, finally, `app.listen`. In addition, some specific `app.get`/`app.post` invocations can be order-dependent. We'll point those out as we come to them.
 
 The remaining notes about placement are mostly to help keep things organized. Don't worry too much about trying to determine the exact placement rules that we're using. Stick to the sequence of calls described above, and you should be okay.
 
@@ -1072,9 +1090,9 @@ The view defines the Cancel button as a link:
 a(href="/lists") Cancel
 ```
 
-The `href` attribute causes the resulting link to issue a GET request to the `/lists` path when we click the link.
+- The `href` attribute causes the resulting link to issue a GET request to the `/lists` path when we click the link.
 
-When you click the `Cancel` button, your browser should return to the todo application's home page. Let's make sure that happens by creating a new route:
+- When you click the `Cancel` button, your browser should return to the todo application's home page. Let's make sure that happens by creating a new route:
 
 todos.js
 
@@ -1084,14 +1102,17 @@ todos.js
 // Render the list of todo lists
 app.get("/lists", (req, res) => {
   res.render("lists", {
-    todoLists: sortTodoLists(todoLists),
+    todoLists: sortShoppingLists(shoppingLists),
   });
 });
 ```
 
 The app should now display the list of todo lists when you click the `Cancel` button.
 
-Notice that the code for the `/lists` route callback is identical to that for `/`. We can -- and should -- address that by converting the callback for `/` to use a redirect:
+### Redirecting the start page
+
+- Notice that the code for the `/lists` route callback is identical to that for `/`. 
+- We can -- and should -- address that by converting the callback for `/` to use a redirect:
 
 todos.js
 
@@ -1102,7 +1123,7 @@ app.get("/", (req, res) => {
 });
 ```
 
-If you navigate to http://localhost:3000/, the redirect sends you to `http://localhost:3000/lists` instead.
+- If you navigate to http://localhost:3000/, the redirect sends you to `http://localhost:3000/lists` instead.
 
 ## Hooking Up The Submit Button
 
