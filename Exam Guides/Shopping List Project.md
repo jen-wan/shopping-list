@@ -1127,7 +1127,10 @@ app.get("/", (req, res) => {
 
 ## Hooking Up The Submit Button
 
-We're now ready to create a new todo list when the user submits the form. Form submission usually occurs when the user clicks the button that represents an `input` item with the `type="submit"` attribute. In this case, we have a submit button that contains the word `Save`:
+We're now ready to create a new todo list when the user submits the form. Form submission usually occurs when the user clicks the button that represents an `input` item with the `type="submit"` attribute. 
+
+- In this case, we have a submit button that contains the word `Save`:
+- This line generates an `<input>` element of type "submit" which creates a submit button in the form. The `value="Save"` attribute sets the button's text to "Save". 
 
 ```jade
 input(type="submit" value="Save")

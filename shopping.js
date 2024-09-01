@@ -32,6 +32,13 @@ app.get("/lists/new", (req, res) => {
   res.render("new-list");
 });
 
+// Create a new todo list
+app.post("/lists", (req, res) => {
+  let title = req.body.todoListTitle.trim();
+  todoLists.push(new TodoList(title));
+  res.redirect("/lists");
+});
+
 // Listener
 app.listen(port, host, () => {
   console.log(`Shopping is listening on port ${port} of ${host}!`);
