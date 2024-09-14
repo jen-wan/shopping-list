@@ -1136,46 +1136,46 @@ We're now ready to create a new todo list when the user submits the form. Form s
 input(type="submit" value="Save")
 ```
 
-There are other ways to trigger form submission, but clicking the submit button is the most obvious. Regardless of how you submit the form, the browser sends an HTTP POST request to the URL `/lists`, as defined by the `method` and `action` attributes of the `form` tag:
+- There are other ways to trigger form submission, but clicking the submit button is the most obvious. Regardless of how you submit the form, the browser sends an HTTP POST request to the URL `/lists`, as defined by the `method` and `action` attributes of the `form` tag:
 
 ```jade
 form(action="/lists" method="post")
 ```
 
-That means that we need a route to handle POST requests to the `/lists` path:
+- That means that we need a route to handle POST requests to the `/lists` path:
 
 todos.js
 
 ```js
 // Add the following code after the `get` route for `/lists/new`
 
-// Create a new todo list
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
-  todoLists.push(new TodoList(title));
+  let title = req.body.shoppingListTitle.trim();
+  todoLists.push(new ShoppingList(title));
   res.redirect("/lists");
 });
 ```
 
-In this code, `req.body` provides access to the values the user entered on the form based on the `name` attribute of each item. Our lone input field is named `todoListTitle`, so we can use `req.body.todoListTitle` to grab its value. Since leading and trailing whitespace can be troublesome in most applications, we use `trim` to get rid of it. Next, we create a new `TodoList` object with the indicated title and push it onto our list of todo lists. Finally, we use `res.redirect` to create a response that redirects the browser back to the `get` version of the `/lists` route.
+- In this code, `req.body` provides access to the values the user entered on the form based on the `name` attribute of each item. Our lone input field is named `shoppingListTitle`, so we can use `req.body.shoppingListTitle` to grab its value. Since leading and trailing whitespace can be troublesome in most applications, we use `trim` to get rid of it. Next, we create a new `ShoppingList` object with the indicated title and push it onto our list of shopping lists. Finally, we use `res.redirect` to create a response that redirects the browser back to the `get` version of the `/lists` route.
 
-Don't forget to load the `todolist` module:
+- Don't forget to load the `todolist` module:
 
 todos.js
 
 ```js
 const express = require("express");
 const morgan = require("morgan");
-const TodoList = require("./lib/todolist");
+const ShoppingList = require("./lib/shopping-list");
 ```
 
-If you try to add a new todo list now, you should get an error:
+If you try to add a new shopping list now, you should get an error:
 
 ```plaintext
-TypeError: Cannot read property 'todoListTitle' of undefined
+TypeError: Cannot read property 'shoppingListTitle' of undefined
 ```
 
-Before we can add a todo list, we need to tell Express about the format used by the form data. For many applications, that would be JSON. However, we can rely on the standard format used in HTML forms: URL-encoded:
+- Before we can add a todo list, we need to tell Express about the format used by the form data. For many applications, that would be JSON. However, we can rely on the standard format used in HTML forms: URL-encoded:
 
 todos.js
 

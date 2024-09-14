@@ -1,5 +1,6 @@
 const express = require("express"); // Load the `express` module.
 const morgan = require("morgan"); // Load the `morgan` module.
+const ShoppingList = require("./lib/shopping-list");
 
 const app = express(); // Create the Express application object `app`. 
 const host = "localhost"; // define host to which app listens for HTTP connections.
@@ -14,6 +15,7 @@ app.set("view engine", "pug"); // Tell express to use Pug as the view engine.
 
 app.use(morgan("common")); // Enable logging with Morgan.
 app.use(express.static('public')); // tells Express to find static assets in the public directory
+app.use(express.urlencoded({ extended: false })); // tell Express about the format used by the form data.
 
 // Render the list of shopping lists
 app.get("/", (req, res) => { // primary route for this application
@@ -32,10 +34,10 @@ app.get("/lists/new", (req, res) => {
   res.render("new-list");
 });
 
-// Create a new todo list
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
-  todoLists.push(new TodoList(title));
+  let title = req.body.shoppingListTitle.trim();
+  shoppingLists.push(new ShoppingList(title));
   res.redirect("/lists");
 });
 
