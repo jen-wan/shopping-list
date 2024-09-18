@@ -1220,10 +1220,10 @@ Here's the current route for POST requests to the `/lists` path:
 todos.js
 
 ```js
-// Create a new todo list
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
-  todoLists.push(new TodoList(title));
+  let title = req.body.shoppingListTitle.trim();
+  shoppingLists.push(new ShoppingList(title));
   res.redirect("/lists");
 });
 ```
@@ -1255,25 +1255,29 @@ In code, that gives us:
 todos.js
 
 ```js
-// Create a new todo list
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
+  let title = req.body.shoppingListTitle.trim();
   if (title.length === 0) {
     res.render("new-list", {
       errorMessage: "A title was not provided.",
     });
   } else {
-    todoLists.push(new TodoList(title));
+    shoppingLists.push(new ShoppingList(title));
     res.redirect("/lists");
   }
 });
 ```
 
-By convention, we use `render` to handle errors that redisplay the same page, and `redirect` to handle success. We can also use `redirect` for errors that display a new page rather than redisplaying the original page. Pay attention to the arguments for `res.render` and `res.redirect`: `render` uses the name of a view template, but `redirect` needs a path.
+- By convention, we use `render` to handle errors that redisplay the same page, and `redirect` to handle success. We can also use `redirect` for errors that display a new page rather than redisplaying the original page. 
+- Pay attention to the arguments for `res.render` and `res.redirect`: `render` uses the name of a view template, but `redirect` needs a path.
 
-If you run the app, you can still create new todo lists, but if you try to create a todo list without a title, nothing much happens when you submit the form. The page may flicker a bit, but there's no way to tell why it isn't working. That's because we aren't displaying the error message. For that, we need to update one of the views.
+- If you run the app, you can still create new todo lists, but if you try to create a todo list without a title, nothing much happens when you submit the form. The page may flicker a bit, but there's no way to tell why it isn't working. That's because we aren't displaying the error message. For that, we need to update one of the views.
 
-Which one? The most obvious choice is to update the view that will show the error message, namely `new-list.pug`. However, we may need error messages on other screens. That suggests that `layout.pug` may be the best place to write the code for error messages. As it happens, that's where most Express+Pug apps put them. Our code looks like this:
+- Which one? The most obvious choice is to update the view that will show the error message, namely `new-list.pug`. However, we may need error messages on other screens. That suggests that `layout.pug` may be the best place to write the code for error messages. As it happens, that's where most Express+Pug apps put them. Our code looks like this:
+- Clarification
+  - So when `new-list` view is rendered, we pass an object `errorMessage` to the `new-list` Pug template. 
+  - The template can then access the `errorMessage` variable and display the message conditionally.
 
 views/layout.pug
 
@@ -1291,7 +1295,7 @@ body
     block main
 ```
 
-The new code first checks to see whether we have an `errorMessage` variable, then displays the message if we do. In this case, we're putting the code inside a block that has `flash` and `error` CSS classes; those classes provide some styling for the error messages. They get displayed in a red/pink box that looks like this:
+- The new code first checks to see whether we have an `errorMessage` variable, then displays the message if we do. In this case, we're putting the code inside a block that has `flash` and `error` CSS classes; those classes provide some styling for the error messages. They get displayed in a red/pink box that looks like this:
 
 
 

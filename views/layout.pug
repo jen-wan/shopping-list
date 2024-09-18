@@ -16,5 +16,8 @@ html(lang="en")
       block headerLinks
 
     main 
+      if errorMessage 
+        .flash.error 
+          p= errorMessage
       block main 
         p Demonstration of code that gets ignored.

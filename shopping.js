@@ -37,8 +37,14 @@ app.get("/lists/new", (req, res) => {
 // Create a new shopping list
 app.post("/lists", (req, res) => {
   let title = req.body.shoppingListTitle.trim();
-  shoppingLists.push(new ShoppingList(title));
-  res.redirect("/lists");
+  if (title.length === 0) {
+    res.render("new-list", {
+      errorMessage: "A title was not provided.",
+    });
+  } else {
+    shoppingLists.push(new ShoppingList(title));
+    res.redirect("/lists");
+  }
 });
 
 // Listener

@@ -1,7 +1,5 @@
 # Working on
 
-# References
-
 - [Node.JS Documentation](https://nodejs.org/docs/latest-v19.x/api/)
 
 # What to Focus On
@@ -1044,7 +1042,7 @@ console.dir(req.params.name)
   - `locals`, an object whose properties define local variables for the view.
 
   - `callback`, a callback function. If provided, the method returns both the possible error and rendered string, but does not perform an automated response. When an error occurs, the method invokes `next(err)` internally.
-  
+
 - Example
 
   ```js
@@ -1055,7 +1053,7 @@ console.dir(req.params.name)
     });
   });
   ```
-  
+
 - Conventions `render` vs `redirect`
 
   - By convention, we use `render` to handle errors that redisplay the same page, and `redirect` to handle success. 
@@ -1068,7 +1066,11 @@ console.dir(req.params.name)
 <u>res.render vs res.redirect</u>
 
 - While handling POST requests, web developers conventionally use `res.render` to redisplay the form. They call `res.redirect` when they need to display some other page. 
-- Typically, you should re-render the page to handle validation errors and use redirection after a successful operation.
+- Conventions `render` vs `redirect`
+
+  - By convention, we use `render` to handle errors that redisplay the same page, and `redirect` to handle success. 
+  - We can also use `redirect` for errors that display a new page rather than redisplaying the original page. 
+  - Pay attention to the arguments for `res.render` and `res.redirect`: `render` uses the name of a view template, but `redirect` needs a path
 
 ### `res.send()`
 
@@ -1137,7 +1139,7 @@ res.send([1, 2, 3])
 - Thus, if we want to extract the error message from this object, we need to use the `msg` property.
 
 - ```js
-   errors.array().map(error => error.msg), //extract error message from error object
+  errors.array().map(error => error.msg), //extract error message from error object
   ```
 
   
@@ -1713,7 +1715,7 @@ let errors = validationResult(req);
     // etc.
   ```
 
--  `custom` validators need access to the `req` object so that they can access `req.session.property`. Fortunately, `express-validator` passes the `req` object as a property on its second argument. 
+- `custom` validators need access to the `req` object so that they can access `req.session.property`. Fortunately, `express-validator` passes the `req` object as a property on its second argument. 
 
   ```js
   app.post("/lists/:todoListId/edit",
@@ -1732,6 +1734,40 @@ let errors = validationResult(req);
         .withMessage("List title must be unique."),
     ],
   ```
+
+
+## Display Error Messages
+
+- How to display simple error messages
+
+  1. **Check for an error condition**: In an `app.post` route, create a conditional statement. 
+
+  2. **Set the error message**: If the condition fails, pass an error message object to the view template using `res.render`
+
+     ```js 
+     // Create a new shopping list
+     app.post("/lists", (req, res) => {
+       let title = req.body.shoppingListTitle.trim();
+       if (title.length === 0) {
+         res.render("new-list", {
+           errorMessage: "A title was not provided.",
+         });
+       } else {
+         shoppingLists.push(new ShoppingList(title));
+         res.redirect("/lists");
+       }
+     }); 
+     ```
+
+  3. **Display in the Pug template**: The Pug template can then access this `errorMessage` variable and display the message conditionally
+
+     layout.pug
+
+     ```pug
+     if errorMessage
+       .flash.error
+         p= errorMessage
+     ```
 
   
 
@@ -1849,10 +1885,6 @@ https://www.npmjs.com/package/req-flash
   In summary, you do not need to include `req.flash()` as an argument in `res.render()` to render the flash messages. The `flash` middleware takes care of making the flash messages available in the view context. I apologize for any confusion caused by my previous responses, and I appreciate your patience in seeking clarification.
 
 - Q: Then why is req.flash() included in res.render in my code?
-
-- 
-
-  
 
   
 
@@ -2190,7 +2222,7 @@ Pug doesn't format HTML nicely
 ### Layouts
 
 - A **Layout** is a boilerplates. It is a pug view template that other Pug templates can extend. In effect, other Pug templates can inherit and override the content of a layout template.
--  `block` command: The values specified after the `block` define a name that other views can use to provide some information to the layout.
+- `block` command: The values specified after the `block` define a name that other views can use to provide some information to the layout.
 - Other templates use `extends` to extend from the layout file.
 
 Example
@@ -2303,7 +2335,7 @@ What to keep and what to discard from layout
   ```pug
   td #{contact.lastName}
   ```
-  
+
 - If you don't append an `=` to a tag name, then JavaScript code must be wrapped inside `#{...}`. This is similar to JavaScript's template literal syntax, but uses `#` instead of `$`. Pug evaluates the `#{...}` expressions, and replaces them with the return value, coerced to a string if needed.
 
 ##### Interpolation of JavaScript expression
@@ -2345,6 +2377,7 @@ What to keep and what to discard from layout
 ##### Messy Example using only view variable
 
 - Pug receives a variable `currentLinkIsEnglish` with the value `"current"` when we render `hello-world-english.pug`.
+
 - Once we've defined those variables in our route callbacks, we can access them in Pug. Let's try it with `hello-world-english.pug` first:
 
 - The `currentLinkisEnglish` is the view variable.
