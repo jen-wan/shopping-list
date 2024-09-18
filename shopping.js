@@ -41,6 +41,14 @@ app.post("/lists", (req, res) => {
     res.render("new-list", {
       errorMessage: "A title was not provided.",
     });
+  } else if (title.length > 100) {
+    res.render("new-list", {
+      errorMessage: "List title must be between 1 and 100 characters.",
+    });
+  } else if (shoppingLists.some(list => list.title === title)) {
+    res.render("new-list", {
+      errorMessage: "List title must be unique.",
+    });
   } else {
     shoppingLists.push(new ShoppingList(title));
     res.redirect("/lists");

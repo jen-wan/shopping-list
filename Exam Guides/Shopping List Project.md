@@ -1303,7 +1303,7 @@ body
 
 
 
-Great! We can now see why the form isn't creating a new todo list.
+Great! We can now see why the form isn't creating a new shopping list.
 
 ## Check for Overly Long Titles
 
@@ -1314,9 +1314,10 @@ Making this change is straightforward. All we have to do is check the length of 
 todos.js
 
 ```js
-// Create a new todo list
+
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
+  let title = req.body.shoppingListTitle.trim();
   if (title.length === 0) {
     res.render("new-list", {
       errorMessage: "A title was not provided.",
@@ -1326,22 +1327,23 @@ app.post("/lists", (req, res) => {
       errorMessage: "List title must be between 1 and 100 characters.",
     });
   } else {
-    todoLists.push(new TodoList(title));
+    shoppingLists.push(new ShoppingList(title));
     res.redirect("/lists");
   }
 });
+
 ```
 
-That's it. You can now test it in your browser. Be sure to check what happens when you switch between an overly long title and no title at all, and then back again. Here are two long titles you can copy and paste into the form:
+- That's it. You can now test it in your browser. Be sure to check what happens when you switch between an overly long title and no title at all, and then back again. Here are two long titles you can copy and paste into the form:
 
 ```plaintext
-123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789!!
 123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789!
+123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789 ABCDEFGHI jklmnopqr 123456789!!
 ```
 
-The first line is 101 characters in length, while the second is 100 characters in length.
+- The first line is 101 characters in length, while the second is 100 characters in length.
 
-You may have noticed that the application wiped out your overly long title when it displayed the error message. We'll address that issue shortly.
+- You may have noticed that the application wiped out your overly long title when it displayed the error message. We'll address that issue shortly.
 
 ## Check for Duplicate Titles
 
@@ -1350,9 +1352,9 @@ We probably don't want to have multiple todo lists with the same title in our li
 todos.js
 
 ```js
-// Create a new todo list
+// Create a new shopping list
 app.post("/lists", (req, res) => {
-  let title = req.body.todoListTitle.trim();
+  let title = req.body.shoppingListTitle.trim();
   if (title.length === 0) {
     res.render("new-list", {
       errorMessage: "A title was not provided.",
@@ -1361,22 +1363,23 @@ app.post("/lists", (req, res) => {
     res.render("new-list", {
       errorMessage: "List title must be between 1 and 100 characters.",
     });
-  } else if (todoLists.some(list => list.title === title)) {
+  } else if (shoppingLists.some(list => list.title === title)) {
     res.render("new-list", {
       errorMessage: "List title must be unique.",
     });
   } else {
-    todoLists.push(new TodoList(title));
+    shoppingLists.push(new ShoppingList(title));
     res.redirect("/lists");
   }
 });
+
 ```
 
 ## Preserve User Inputs
 
 - In this code, we let the view know about the user's input by adding it as a property on the object passed to `res.render`.
 
-As we mentioned earlier, our error handling suffers from an annoying problem: when an error occurs, any input the user entered disappears when the screen refreshes. We need some way for user inputs to persist when an error occurs. We can use the second argument to `res.render` to pass in the user's most recent inputs. First, though, let's update `new-list.pug` to look for a variable:
+- As we mentioned earlier, our error handling suffers from an annoying problem: when an error occurs, any input the user entered disappears when the screen refreshes. We need some way for user inputs to persist when an error occurs. We can use the second argument to `res.render` to pass in the user's most recent inputs. First, though, let's update `new-list.pug` to look for a variable:
 
 views/new-list.pug
 
