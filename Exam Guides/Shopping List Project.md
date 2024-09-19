@@ -1379,31 +1379,34 @@ app.post("/lists", (req, res) => {
 
 - In this code, we let the view know about the user's input by adding it as a property on the object passed to `res.render`.
 
-- As we mentioned earlier, our error handling suffers from an annoying problem: when an error occurs, any input the user entered disappears when the screen refreshes. We need some way for user inputs to persist when an error occurs. We can use the second argument to `res.render` to pass in the user's most recent inputs. First, though, let's update `new-list.pug` to look for a variable:
+- As we mentioned earlier, our error handling suffers from an annoying problem: when an error occurs, any input the user entered disappears when the screen refreshes. We need some way for user inputs to persist when an error occurs. 
+  - We can use the second argument to `res.render` to pass in the user's most recent inputs. 
+  - First, though, let's update `new-list.pug` to look for a variable:
 
 views/new-list.pug
 
 ```jade
 extends layout
 
-block main
+block main  
   form(action="/lists" method="post")
-    dl
-      dt
-        label(for="todoListTitle") Enter the title for your new list:
-      dd
-        input(type="text"
-              id="todoListTitle"
-              name="todoListTitle"
-              placeholder="List Title"
-              value=todoListTitle)
-
-    fieldset.actions
+    dl 
+      dt 
+        label(for="shoppingListTitle") Enter the title for your new list: 
+    dd 
+      input(type="text"
+            id="shoppingListTitle"
+            name="shoppingListTitle"
+            placeholder="List Title"
+            value=shoppingListTitle)
+    
+    fieldset.actions 
       input(type="submit" value="Save")
       a(href="/lists") Cancel
 ```
 
-The only difference here is that we now try to find the list title in a `todoListTitle` variable. If `todoListTitle` isn't defined, the input field gets set to an empty string. Otherwise, it gets set to the value of the variable. Let's define that variable for the view:
+- The only difference here is that we now try to find the list title in a `shoppingListTitle` variable. If `shoppingListTitle` isn't defined, the input field gets set to an empty string. Otherwise, it gets set to the value of the variable. 
+- Let's define that variable for the view:
 
 todos.js
 
@@ -1434,7 +1437,7 @@ app.post("/lists", (req, res) => {
 
 In this code, we let the view know about the user's input by adding it as a property on the object passed to `res.render`. That allows the template to access the user's previous entry. (Note that we haven't supplied the user input for an empty title -- we don't need it.)
 
-With these changes, input errors no longer cause loss of the user's input:
+- With these changes, input errors no longer cause loss of the user's input:
 
 
 

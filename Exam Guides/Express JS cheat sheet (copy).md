@@ -1039,7 +1039,7 @@ console.dir(req.params.name)
 
 - Renders a `view` and sends the rendered HTML string to the client. Optional parameters:
 
-  - `locals`, an object whose properties define local variables for the view.
+  - `locals`, an object whose properties define local variables for the view. 
 
   - `callback`, a callback function. If provided, the method returns both the possible error and rendered string, but does not perform an automated response. When an error occurs, the method invokes `next(err)` internally.
 
@@ -1059,6 +1059,26 @@ console.dir(req.params.name)
   - By convention, we use `render` to handle errors that redisplay the same page, and `redirect` to handle success. 
   - We can also use `redirect` for errors that display a new page rather than redisplaying the original page. 
   - Pay attention to the arguments for `res.render` and `res.redirect`: `render` uses the name of a view template, but `redirect` needs a path.
+  
+- Preserve user input by adding it as a property of the `locals` object passed to `res.render`. 
+
+  ```js
+  // Create a new shopping list
+  app.post("/lists", (req, res) => {
+    let title = req.body.shoppingListTitle.trim();
+    if (title.length > 100) {
+      res.render("new-list", {
+        errorMessage: "List title must be between 1 and 100 characters.",
+        todoListTitle: title,
+      });
+    } else {
+      shoppingLists.push(new ShoppingList(title));
+      res.redirect("/lists");
+    }
+  });
+  ```
+
+  
 
 
 ### `res.redirect`
@@ -1927,7 +1947,49 @@ https://www.npmjs.com/package/req-flash
 
 ## Preserving User Input
 
-- Let the view know about the user's input by adding it as a property on the object passed to `res.render`.
+- Let the view know about the user's input by adding it as a property on the `locals` object passed to `res.render`. 
+
+- Now the view can access this variable. 
+
+  ```js
+  // Create a new shopping list
+  app.post("/lists", (req, res) => {
+    let title = req.body.shoppingListTitle.trim();
+    if (title.length > 100) {
+      res.render("new-list", {
+        errorMessage: "List title must be between 1 and 100 characters.",
+        todoListTitle: title,
+      });
+    } else {
+      shoppingLists.push(new ShoppingList(title));
+      res.redirect("/lists");
+    }
+  });
+  ```
+
+- Also update the view to look for this variable.
+
+  ```pug
+  extends layout
+  
+  block main  
+    form(action="/lists" method="post")
+      dl 
+        dt 
+          label(for="shoppingListTitle") Enter the title for your new list: 
+      dd 
+        input(type="text"
+              id="shoppingListTitle"
+              name="shoppingListTitle"
+              placeholder="List Title"
+              value=shoppingListTitle) // here
+      
+      fieldset.actions 
+        input(type="submit" value="Save")
+        a(href="/lists") Cancel
+  ```
+
+- With these changes, input errors no longer cause loss of the user's input:
 
 ## Session Persistence
 
