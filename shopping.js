@@ -20,13 +20,20 @@ app.use(express.static('public')); // tells Express to find static assets in the
 app.use(express.urlencoded({ extended: false })); // tell Express about the format used by the form data.
 
 app.use(session({
-  name: "launch-school-todos-session-id",
+  name: "launch-school-shopping-session-id",
   resave: false,
   saveUninitialized: true,
   secret: "this is not very secure",
 }));
 
 app.use(flash());
+
+// Extract session info
+app.use((req, res, next) => {
+  res.locals.flash = req.session.flash;
+  delete req.session.flash;
+  next();
+});
 
 // Render the list of shopping lists
 app.get("/", (req, res) => { // primary route for this application
@@ -48,22 +55,29 @@ app.get("/lists/new", (req, res) => {
 // Create a new shopping list
 app.post("/lists", (req, res) => {
   let title = req.body.shoppingListTitle.trim();
+
   if (title.length === 0) {
+    req.flash("error", "A title was not provided.");
     res.render("new-list", {
-      errorMessage: "A title was not provided.",
+      flash: req.flash(),
     });
   } else if (title.length > 100) {
+    req.flash("error", "List title must be between 1 and 100 characters.");
+    req.flash("error", "This is another error.");
+    req.flash("error", "Here is still another error.");
     res.render("new-list", {
-      errorMessage: "List title must be between 1 and 100 characters.",
-      todoListTitle: title,
+      flash: req.flash(),
+      shoppingListTitle: req.body.shoppingListTitle,
     });
   } else if (shoppingLists.some(list => list.title === title)) {
+    req.flash("error", "List title must be unique.");
     res.render("new-list", {
-      errorMessage: "List title must be unique.",
-      todoListTitle: title,
+      flash: req.flash(),
+      shoppingListTitle: req.body.shoppingListTitle,
     });
   } else {
     shoppingLists.push(new ShoppingList(title));
+    req.flash("success", "The todo list has been created.");
     res.redirect("/lists");
   }
 });
