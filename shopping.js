@@ -1,5 +1,7 @@
 const express = require("express"); // Load the `express` module.
 const morgan = require("morgan"); // Load the `morgan` module.
+const flash = require("express-flash");
+const session = require("express-session");
 const ShoppingList = require("./lib/shopping-list");
 
 const app = express(); // Create the Express application object `app`. 
@@ -16,6 +18,15 @@ app.set("view engine", "pug"); // Tell express to use Pug as the view engine.
 app.use(morgan("common")); // Enable logging with Morgan.
 app.use(express.static('public')); // tells Express to find static assets in the public directory
 app.use(express.urlencoded({ extended: false })); // tell Express about the format used by the form data.
+
+app.use(session({
+  name: "launch-school-todos-session-id",
+  resave: false,
+  saveUninitialized: true,
+  secret: "this is not very secure",
+}));
+
+app.use(flash());
 
 // Render the list of shopping lists
 app.get("/", (req, res) => { // primary route for this application

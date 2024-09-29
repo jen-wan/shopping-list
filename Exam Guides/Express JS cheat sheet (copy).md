@@ -1668,7 +1668,6 @@ How to use `express-validator`
    if (!errors.isEmpty()) {
    	errors.array().forEach(message => req.flash("error", message.msg));
    }
-     
    ```
 
 Why `epxress-validator`
@@ -1789,26 +1788,83 @@ let errors = validationResult(req);
          p= errorMessage
      ```
 
+
+## Code placement order
+
+- In particular, the `app.set` calls should be first, followed by `app.use`, then `app.get` and `app.post`, and, finally, `app.listen`. In addition, some specific `app.get`/`app.post`
+
+## Preserving User Input
+
+- Let the view know about the user's input by adding it as a property on the `locals` object passed to `res.render`. 
+
+- Now the view can access this variable. 
+
+  ```js
+  // Create a new shopping list
+  app.post("/lists", (req, res) => {
+    let title = req.body.shoppingListTitle.trim();
+    if (title.length > 100) {
+      res.render("new-list", {
+        errorMessage: "List title must be between 1 and 100 characters.",
+        todoListTitle: title,
+      });
+    } else {
+      shoppingLists.push(new ShoppingList(title));
+      res.redirect("/lists");
+    }
+  });
+  ```
+
+- Also update the view to look for this variable.
+
+  ```pug
+  extends layout
   
+  block main  
+    form(action="/lists" method="post")
+      dl 
+        dt 
+          label(for="shoppingListTitle") Enter the title for your new list: 
+      dd 
+        input(type="text"
+              id="shoppingListTitle"
+              name="shoppingListTitle"
+              placeholder="List Title"
+              value=shoppingListTitle) // here
+      
+      fieldset.actions 
+        input(type="submit" value="Save")
+        a(href="/lists") Cancel
+  ```
+
+- With these changes, input errors no longer cause loss of the user's input:
 
 ## Flash Messages
 
-- Flash messages are temporary messages that can be set in one request and displayed in the subsequent request. 
+- Flash messages are messages that are rendered once, then go away the next time the browser loads a new page.
 
-  - That's why we define our error messages with `req.flash`. 
+### Why flash messages need persistence
+
+- Flash messages are temporary messages that can be set in one request and displayed in the subsequent request.
+- Errors mostly occur while processing POST requests, and applications can easily include error messages in the response. However, a success response is generally handled with a redirect response back to the client --> the redirect is a header that tells the client to request a new URL which starts a new request/ response cycle, so messages get lost.
+- Thus, using sessions allow flash messages to persist. `express-flash` module uses `express-session` to create a session, so that the success state & message can be preserved.
+
+### Install `express-flash` and `express-session`
+
+- We can install both modules with the following command:
+
+```terminal
+$ npm install express-flash express-session --save
+```
+
+### `req.flash`
+
+- we define our error messages with `req.flash`. 
 
 - The first argument in `req.flash()` is typically the "type" of the flash message.  This type is used to categorize the flash message and is often associated with a specific CSS class in the view template to style the message accordingly.
 
   ```js
   req.flash("success", "success message");
-  ```
-
-- `express-flash` uses `express-session` to create sessions. With most error messages, `express-flash` doesn't need sessions, but it uses them regardless.
-
-- We can install both modules with the following command:
-
-  ```terminal
-  $ npm install express-flash express-session --save
   ```
 
 - Flash messages are stored as a single object in `req.session.flash`
@@ -1940,56 +1996,6 @@ https://www.npmjs.com/package/req-flash
      ```
 
   If you're observing that `req.flash()` is included in the `res.render()` function call and you're wondering why, it might be helpful to review the surrounding code and the specific requirements of your application. Sometimes developers include additional logic or customization that might justify this usage, but in most cases, you can rely on the automatic availability of flash messages through the `flash` middleware.
-
-## Code placement order
-
-- In particular, the `app.set` calls should be first, followed by `app.use`, then `app.get` and `app.post`, and, finally, `app.listen`. In addition, some specific `app.get`/`app.post`
-
-## Preserving User Input
-
-- Let the view know about the user's input by adding it as a property on the `locals` object passed to `res.render`. 
-
-- Now the view can access this variable. 
-
-  ```js
-  // Create a new shopping list
-  app.post("/lists", (req, res) => {
-    let title = req.body.shoppingListTitle.trim();
-    if (title.length > 100) {
-      res.render("new-list", {
-        errorMessage: "List title must be between 1 and 100 characters.",
-        todoListTitle: title,
-      });
-    } else {
-      shoppingLists.push(new ShoppingList(title));
-      res.redirect("/lists");
-    }
-  });
-  ```
-
-- Also update the view to look for this variable.
-
-  ```pug
-  extends layout
-  
-  block main  
-    form(action="/lists" method="post")
-      dl 
-        dt 
-          label(for="shoppingListTitle") Enter the title for your new list: 
-      dd 
-        input(type="text"
-              id="shoppingListTitle"
-              name="shoppingListTitle"
-              placeholder="List Title"
-              value=shoppingListTitle) // here
-      
-      fieldset.actions 
-        input(type="submit" value="Save")
-        a(href="/lists") Cancel
-  ```
-
-- With these changes, input errors no longer cause loss of the user's input:
 
 ## Session Persistence
 

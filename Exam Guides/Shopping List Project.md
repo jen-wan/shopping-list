@@ -1515,7 +1515,7 @@ body
       block headerLinks
 
     main
-      - let kinds = Object.keys(flash || {});
+      - let kinds = Object.keys(flash || {}); 
       if kinds.length > 0
         ul
           each kind in kinds
@@ -1527,6 +1527,42 @@ body
 
 Note that we reference `flash || {}` on line 1 in case `flash` is `undefined` or `null`. Without `|| {}`, `Object.keys(flash)` would raise an error if `flash` wasn't set.
 
+1. `main`: 
+
+   This represents a `<main>` HTML tag. Everything indented beneath it will be nested inside the `<main>` tag.
+
+2. `- let kinds = Object.keys(flash || {});`
+
+   This is an embedded JavaScript line. The `-` symbol in Pug allows you to run JavaScript code.
+
+   - It sets `kinds` to the keys of the `flash` object, or to an empty object if `flash` is `null` or `undefined`.
+
+   - `Object.keys(flash || {})` retrieves the keys of the `flash` object (which might represent categories like `error`, `success`, etc.). 
+
+3. `if kinds.length > 0`
+
+   A standard conditional statement. If `kinds` (i.e., the flash message categories) has any elements, it will render the following HTML.
+
+4. `ul`
+
+   This creates an unordered list (`<ul>` in HTML). If there are flash messages, they will be displayed as a list. 
+
+5. `each kind in kinds`
+
+   This is a loop that iterates over each key (or "kind") in the `kinds` array. Each `kind` could be something like `error`, `success`, etc.
+
+6. `each message in flash[kind]`
+
+   For each "kind" (like `error` or `success`), this loop iterates over the corresponding messages in `flash[kind]`. Flash messages are often stored as arrays for each category.
+
+7. `li.flash(class=kind)= message`
+
+   This creates a list item (`<li>`) with two things:
+
+   - The class is set to the value of `kind` (e.g., `class="error"` if `kind` is `error`).
+
+   - The content of the list item is the value of `message`. The `=` in Pug is used to output variables or expressions. So, this outputs the flash message text inside the `<li>`.
+
 ## Handling Flash Messages in JavaScript
 
 In JavaScript, we need to import and set up both `express-flash` and `express-session`.
@@ -1534,14 +1570,14 @@ In JavaScript, we need to import and set up both `express-flash` and `express-se
 todos.js
 
 ```js
-const express = require("express");
-const morgan = require("morgan");
+const express = require("express"); // Load the `express` module.
+const morgan = require("morgan"); // Load the `morgan` module.
 const flash = require("express-flash");
 const session = require("express-session");
-const TodoList = require("./lib/todolist");
+const ShoppingList = require("./lib/shopping-list");
 ```
 
-todos.js
+shopping.js
 
 ```js
 // Add the following code after app.use(express.urlencoded(...);
@@ -1554,6 +1590,40 @@ app.use(session({
 
 app.use(flash());
 ```
+
+This code configures session management and flash messaging in an Express.js application. Let's break it down step by step:
+
+1. **`app.use(session({ ... }))`**:
+
+This line sets up **session management** using the `express-session` middleware. A session allows the server to store information about a user across multiple requests, such as keeping track of a logged-in user.
+
+- **`name: "launch-school-todos-session-id"`**: This sets the name of the cookie that will store the session ID on the client's browser. In this case, it's named `"launch-school-todos-session-id"`.
+- **`resave: false`**: This option determines whether the session should be saved back to the session store, even if it hasn't been modified during the request. `false` means the session won't be saved if it hasn't changed, which can improve performance.
+- **`saveUninitialized: true`**: This option determines whether to save a new, uninitialized session (i.e., a session that hasn't been modified yet). `true` means sessions will be saved to the store even if they don't contain any data yet.
+- **`secret: "this is not very secure"`**: This is a **secret key** used to sign and verify the session ID cookie to prevent tampering. It should ideally be a long, complex, and secure string in production.
+
+**In summary**: This part manages session state across requests, storing a unique session ID in a cookie on the client side. The session ID references the session data stored server-side.
+
+2. **`app.use(flash())`**:
+
+This line enables **flash messages** using the `connect-flash` middleware.
+
+Flash messages are typically used to display **temporary messages** to users after certain actions (e.g., form submissions or redirects). They are stored in the session and cleared after being displayed once. Common use cases include displaying success or error messages.
+
+**Example**:
+
+- After a user logs in successfully, you might want to display a "Login successful!" message. You can store this message in a flash object, and it will be available in the next request (typically the page you redirect to after login).
+
+```js
+req.flash('info', 'Login successful!');
+```
+
+Combined Use:
+
+- **Session**: Ensures that a user’s state (like login status) is preserved across multiple requests, using cookies.
+- **Flash**: Allows temporary messages to be sent between requests, typically shown to users after redirects or actions like form submissions.
+
+In summary, this code manages user sessions in your Express app and enables the use of flash messages to communicate short-lived information to the user.
 
 Refer to the previous lesson if you need to refresh your memory on what this code does. 
 
