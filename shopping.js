@@ -2,6 +2,7 @@ const express = require("express"); // Load the `express` module.
 const morgan = require("morgan"); // Load the `morgan` module.
 const flash = require("express-flash");
 const session = require("express-session");
+const { body, validationResult } = require("express-validator"); 
 const ShoppingList = require("./lib/shopping-list");
 
 const app = express(); // Create the Express application object `app`. 
