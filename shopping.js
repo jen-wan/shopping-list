@@ -54,34 +54,36 @@ app.get("/lists/new", (req, res) => {
 });
 
 // Create a new shopping list
-app.post("/lists", (req, res) => {
-  let title = req.body.shoppingListTitle.trim();
-
-  if (title.length === 0) {
-    req.flash("error", "A title was not provided.");
-    res.render("new-list", {
-      flash: req.flash(),
-    });
-  } else if (title.length > 100) {
-    req.flash("error", "List title must be between 1 and 100 characters.");
-    req.flash("error", "This is another error.");
-    req.flash("error", "Here is still another error.");
-    res.render("new-list", {
-      flash: req.flash(),
-      shoppingListTitle: req.body.shoppingListTitle,
-    });
-  } else if (shoppingLists.some(list => list.title === title)) {
-    req.flash("error", "List title must be unique.");
-    res.render("new-list", {
-      flash: req.flash(),
-      shoppingListTitle: req.body.shoppingListTitle,
-    });
-  } else {
-    shoppingLists.push(new ShoppingList(title));
-    req.flash("success", "The todo list has been created.");
-    res.redirect("/lists");
+app.post("/lists",
+  // validation middleware placed in an array
+  [
+    body("shoppingListTitle") // validating the shoppingListTitle field of request body
+    .trim()
+    .isLength({ min: 1})
+    .withMessage("The list title is required.") // withMessage defines an err msg when validation condition isn't met.
+    .isLength({ max: 100 })
+    .withMessage("List title must be betweeen 1 and 100 characters.")
+    .custom(title => { // custom validator
+      let duplicate = todoLists.find(list => list.title === title);
+      return duplicate === undefined; 
+    })
+    .withMessage("List title must be unique."), // err msg if error found in custom validator
+  ],
+  (req, res) => { // error handler for validation errors
+    let errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      errors.array().forEach(message => req.flash("error", message.msg));
+      res.render("new-list", {
+        flash: req.flash(),
+        shoppingListTitle: req.body.shoppingListTitle,
+      });
+    } else {
+      shoppingLists.push(new ShoppingList(req.body.shoppingListTitle));
+      req.flash("success", "The shopping list has been created.");
+      res.redirect("/lists");
+    }
   }
-});
+);
 
 // Listener
 app.listen(port, host, () => {
