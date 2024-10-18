@@ -1,4 +1,4 @@
-let orders = [341, 452, 198, 264, 307];
+let orders = [341, 454, 198, 264, 307];
 
 let totalOrders = 0;
 
