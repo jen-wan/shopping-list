@@ -10,10 +10,10 @@ const readFile = () => {
 
 // getWords function processes a string of text and flattens it to an array with its words.
 const getWords = (text) => {
-  let allSentences = text.split('\n'); // splits the string based on newlines (\n)
-  let flatSentence = allSentences.join(' '); // join sentences into a flat string
-  let words = flatSentence.split(' '); // split by spaces into words
-  words = words.map((word) => word.trim().toLowerCase()); // Clean up and normalize words
+  let allSentences = text.split('\n');
+  let flatSentence = allSentences.join(' ');
+  let words = flatSentence.split(' ');
+  words = words.map((word) => word.trim().toLowerCase());
   return words;
 };
 
@@ -22,15 +22,16 @@ const getWords = (text) => {
 const countWords = (words) => {
   let map = {};
   words.forEach((word) => {
-    if (word in map) {
+    debugger;
+    if (!(word in map)) {
       map[word] = 1;
     } else {
       map[word] += 1;
     }
+  debugger;
   });
-
   return map;
 };
 
 // export the functions and make them available to other modules
-module.exports = {  readFile, getWords, countWords };
+module.exports = { readFile, getWords, countWords };
