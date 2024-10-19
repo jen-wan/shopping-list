@@ -48,10 +48,19 @@ app.get("/lists", (req, res) => {
   });
 });
 
-// Render new todo list page
+// Render new shopping list page
 app.get("/lists/new", (req, res) => {
   res.render("new-list");
 });
+
+// render the specific shopping list 
+app.get("/lists/:shoppingListId", (req, res) => {
+  let listId = req.params.todoListId;
+  res.render("list", {
+    
+  });
+});
+
 
 // Create a new shopping list
 app.post("/lists",

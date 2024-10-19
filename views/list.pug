@@ -1,1 +1,45 @@
 extends layout
+
+block main
+  section#items(class=shoppingList.isDone() ? "done" : "")
+    header
+      h2= shoppingList.title
+      ul
+        if shoppingList.size() > 0 && !shoppingList.isDone()
+          li
+            form.complete_all(action=`/lists/${shoppingList.id}/complete_all`
+                              method="post")
+              button.check(type="submit") Complete All
+        li
+          form(action=`/lists/${shoppingList.id}/edit` method="get")
+            button.edit(type="submit") Edit List
+
+    ul
+      each item in items
+        li(class=item.isDone() ? "done" : "")
+          form.check(action=`/lists/${shoppingList.id}/items/${item.id}/toggle`
+                     method="post")
+            input(type="hidden" name="done" value=!item.isDone())
+            button Done
+
+          h3= item.title
+          form.delete(action=`/lists/${shoppingList.id}/shopping/${item.id}/destroy`
+                      method="post")
+            button Delete
+
+    form(action=`/lists/${shoppingList.id}/todos` method="post")
+      dl
+        dt
+          label(for="itemTitle") Enter a new shopping item:
+        dd
+          input(type="text"
+                name="itemTitle"
+                id="itemTitle"
+                placeholder="Something to do"
+                value=itemTitle)
+      fieldset.actions
+        button Add
+
+block headerLinks
+  .actions
+    a.list(href="/lists") All Lists
