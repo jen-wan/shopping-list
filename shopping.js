@@ -55,9 +55,12 @@ app.get("/lists/new", (req, res) => {
 
 // render the specific shopping list 
 app.get("/lists/:shoppingListId", (req, res) => {
-  let listId = req.params.todoListId;
+  let listId = +req.params.shoppingListId; // type conversion be careful!
+  let shoppingList = shoppingLists.find(list => list.id === listId);
+  let items = shoppingList.items;
   res.render("list", {
-    
+    shoppingList,
+    items,
   });
 });
 
