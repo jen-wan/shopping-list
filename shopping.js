@@ -8,7 +8,7 @@ const ShoppingList = require("./lib/shopping-list");
 const app = express(); // Create the Express application object `app`. 
 const host = "localhost"; // define host to which app listens for HTTP connections.
 const port = 3002; // define the port to which the app listens for HTTP connctions.
-const sortShoppingLists = require("./lib/sort"); // import module for sorting shopping lists.
+const {sortItems, sortShoppingLists} = require("./lib/sort"); // import module for sorting shopping lists.
 
 // Static data for initial testing
 let shoppingLists = require("./lib/seed-data");
@@ -36,6 +36,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// error handler
+app.use((err, req, res, _next) => {
+  console.log(err);
+  res.status(404).send(err.message);
+})
+
+// Find a shopping list with the indicated ID. Returns `undefined` if not found.
+// Note that the `shoppingListId` must be numeric.
+const loadShoppingList = (shoppingListId, shoppingLists) => {
+  return shoppingLists.find(list => list.id === shoppingListId);
+}
+
 // Render the list of shopping lists
 app.get("/", (req, res) => { // primary route for this application
   res.redirect("/lists");
@@ -56,12 +68,16 @@ app.get("/lists/new", (req, res) => {
 // render the specific shopping list 
 app.get("/lists/:shoppingListId", (req, res) => {
   let listId = +req.params.shoppingListId; // type conversion be careful!
-  let shoppingList = shoppingLists.find(list => list.id === listId);
-  let items = shoppingList.items;
-  res.render("list", {
-    shoppingList,
-    items,
-  });
+  let shoppingList = loadShoppingList(+listId, shoppingLists);
+  if (shoppingList === undefined) {
+    next(new Error(`Not found.`));
+  } else {
+    let items = shoppingList.items;
+    res.render("list", {
+      shoppingList,
+      items,
+    });
+  }
 });
 
 
