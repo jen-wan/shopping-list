@@ -4,11 +4,11 @@ const flash = require("express-flash");
 const session = require("express-session");
 const { body, validationResult } = require("express-validator"); 
 const ShoppingList = require("./lib/shopping-list");
+const { sortItems, sortShoppingLists } = require("./lib/sort"); // import module for sorting shopping lists.
 
 const app = express(); // Create the Express application object `app`. 
 const host = "localhost"; // define host to which app listens for HTTP connections.
 const port = 3002; // define the port to which the app listens for HTTP connctions.
-const {sortItems, sortShoppingLists} = require("./lib/sort"); // import module for sorting shopping lists.
 
 // Static data for initial testing
 let shoppingLists = require("./lib/seed-data");
@@ -36,8 +36,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// error handler
-app.use((err, req, res, _next) => {
+// 404 Not Found error handler
+app.use((err, req, res, _next) => { // _next uses underscore to avoid warning about unused variables.
   console.log(err);
   res.status(404).send(err.message);
 })
@@ -46,6 +46,17 @@ app.use((err, req, res, _next) => {
 // Note that the `shoppingListId` must be numeric.
 const loadShoppingList = (shoppingListId, shoppingLists) => {
   return shoppingLists.find(list => list.id === shoppingListId);
+}
+
+// Find the specific item in the shopping List. Returns `undefined` if not found.
+// Note that the `itemId` must be numeric.
+const loadItem = (itemId, shoppingListId) => {
+  let shoppingList = loadShoppingList(shoppingListId, shoppingLists);
+  if (shoppingList) {
+    return shoppingList.items.find(item => item.id === itemId);
+  } else {
+    return undefined;
+  }
 }
 
 // Render the list of shopping lists
@@ -66,16 +77,15 @@ app.get("/lists/new", (req, res) => {
 });
 
 // render the specific shopping list 
-app.get("/lists/:shoppingListId", (req, res) => {
+app.get("/lists/:shoppingListId", (req, res, next) => {
   let listId = +req.params.shoppingListId; // type conversion be careful!
   let shoppingList = loadShoppingList(+listId, shoppingLists);
   if (shoppingList === undefined) {
     next(new Error(`Not found.`));
   } else {
-    let items = shoppingList.items;
     res.render("list", {
       shoppingList,
-      items,
+      items: sortItems(shoppingList),
     });
   }
 });
@@ -112,6 +122,26 @@ app.post("/lists",
     }
   }
 );
+
+// Toggle item completion status
+app.post("/lists/:shoppingListId/items/:itemId/toggle", (req, res, next) => {
+  let {shoppingListId, itemId } = {...req.params}; // obj destructuring & spread syntax
+  let item = loadItem(+itemId, +shoppingListId); // type conversion be careful!
+  
+  if (!item) {
+    next(new Error(`Not found.`));
+  } else {
+    if (item.isPurchased()) {
+      item.markNotPurchased();
+      req.flash("success", `${item.title} marked as NOT done!`);
+    } else {
+      item.markPurchased();
+      req.flash("success", `${item.title} marked done.`);
+    }
+
+    res.redirect(`/lists/${shoppingListId}`);
+  }
+});
 
 // Listener
 app.listen(port, host, () => {

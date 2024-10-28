@@ -16,10 +16,10 @@ block main
 
     ul
       each item in items
-        li(class=item.isDone() ? "done" : "")
+        li(class=item.isPurchased() ? "done" : "")
           form.check(action=`/lists/${shoppingList.id}/items/${item.id}/toggle`
                      method="post")
-            input(type="hidden" name="done" value=!item.isDone())
+            input(type="hidden" name="done" value=!item.isPurchased())
             button Done
 
           h3= item.title
