@@ -30,17 +30,12 @@ app.use(session({
 app.use(flash());
 
 // Extract session info
+// res.locals allows us to pass data (like flash messages) to the view for the current request
 app.use((req, res, next) => {
-  res.locals.flash = req.session.flash;
+  res.locals.flash = req.session.flash; 
   delete req.session.flash;
   next();
 });
-
-// 404 Not Found error handler
-app.use((err, req, res, _next) => { // _next uses underscore to avoid warning about unused variables.
-  console.log(err);
-  res.status(404).send(err.message);
-})
 
 // Find a shopping list with the indicated ID. Returns `undefined` if not found.
 // Note that the `shoppingListId` must be numeric.
@@ -53,7 +48,7 @@ const loadShoppingList = (shoppingListId, shoppingLists) => {
 const loadItem = (itemId, shoppingListId) => {
   let shoppingList = loadShoppingList(shoppingListId, shoppingLists);
   if (shoppingList) {
-    return shoppingList.items.find(item => item.id === itemId);
+    return shoppingList.findById(itemId);
   } else {
     return undefined;
   }
@@ -89,7 +84,6 @@ app.get("/lists/:shoppingListId", (req, res, next) => {
     });
   }
 });
-
 
 // Create a new shopping list
 app.post("/lists",
@@ -142,6 +136,44 @@ app.post("/lists/:shoppingListId/items/:itemId/toggle", (req, res, next) => {
     res.redirect(`/lists/${shoppingListId}`);
   }
 });
+
+// delete an item from a shopping list
+app.post("/lists/:shoppingListId/shopping/:itemId/destroy", (req, res, next) => {
+  let { shoppingListId, itemId } = { ...req.params };
+  let shoppingList = loadShoppingList(+shoppingListId, shoppingLists);
+  if (!shoppingList) {
+    next(new Error("Not found."));
+  } else {
+    let item = shoppingList.findById(+itemId); // make sure to do type conversion here!
+    if (!item) {
+      next(new Error("Not found."));
+    } else {
+      let index = shoppingList.findIndexOf(item);
+      shoppingList.removeAt(index);
+      req.flash("success", "The item has been deleted.");
+      res.redirect(`/lists/${shoppingListId}`); // make sure the route URL is correct!! Need the / in front of lists.
+    }
+  }
+});
+
+// complete all of the items in a shopping list.
+app.post("/lists/:shoppingListId/complete_all", (req, res, next) => {
+  let {shoppingListId} = {...req.params};
+  let shoppingList = loadShoppingList(+shoppingListId, shoppingLists); // again remember to convert string to number.
+  if (!shoppingList) {
+    next(new Error("Not found."));
+  } else {
+    shoppingList.markAllPurchased();
+    req.flash("success", "List all done!");
+    res.redirect(`/lists/${shoppingListId}`);
+  }
+});
+
+// 404 Not Found error handler
+app.use((err, req, res, _next) => { // _next uses underscore to avoid warning about unused variables.
+  console.log(err);
+  res.status(404).send(err.message);
+})
 
 // Listener
 app.listen(port, host, () => {
