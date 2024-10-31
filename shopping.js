@@ -4,6 +4,7 @@ const flash = require("express-flash");
 const session = require("express-session");
 const { body, validationResult } = require("express-validator"); 
 const ShoppingList = require("./lib/shopping-list");
+const Item = require("./lib/item");
 const { sortItems, sortShoppingLists } = require("./lib/sort"); // import module for sorting shopping lists.
 
 const app = express(); // Create the Express application object `app`. 
@@ -168,6 +169,39 @@ app.post("/lists/:shoppingListId/complete_all", (req, res, next) => {
     res.redirect(`/lists/${shoppingListId}`);
   }
 });
+
+// Add a new item to the shopping list.
+app.post("/lists/:shoppingListId/shopping", 
+  // validation chains
+  [
+    body()
+  ],
+  // error handling middleware
+  (req, res, next) => {
+    let errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      errors.array().forEach(error => req.flash(error.msg));
+    } else {
+      next();
+    }
+  }, 
+
+  // main route handler
+  (req, res) => {
+    let { shoppingListId } = { ...req.params };
+    let title = req.body.itemTitle;
+    let shoppingList = loadShoppingList(+shoppingListId, shoppingLists);
+
+    if (!shoppingList) {
+      next(new Error("Not found."));
+    } else {
+      let item = new Item(title);
+      shoppingList.add(item);
+
+      res.redirect(`/lists/${shoppingListId}`);
+    }
+  }
+);
 
 // 404 Not Found error handler
 app.use((err, req, res, _next) => { // _next uses underscore to avoid warning about unused variables.
