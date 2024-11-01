@@ -2,17 +2,16 @@ const express = require("express"); // Load the `express` module.
 const morgan = require("morgan"); // Load the `morgan` module.
 const flash = require("express-flash");
 const session = require("express-session");
-const { body, validationResult } = require("express-validator"); 
+const store = require("connect-loki");
+const { req, body, validationResult } = require("express-validator"); 
 const ShoppingList = require("./lib/shopping-list");
 const Item = require("./lib/item");
 const { sortItems, sortShoppingLists } = require("./lib/sort"); // import module for sorting shopping lists.
 
 const app = express(); // Create the Express application object `app`. 
+const LokiStore = store(session);
 const host = "localhost"; // define host to which app listens for HTTP connections.
 const port = 3002; // define the port to which the app listens for HTTP connctions.
-
-// Static data for initial testing
-let shoppingLists = require("./lib/seed-data");
 
 app.set("views", "./views"); // tell Express where to find view templates
 app.set("view engine", "pug"); // Tell express to use Pug as the view engine.
@@ -22,13 +21,34 @@ app.use(express.static('public')); // tells Express to find static assets in the
 app.use(express.urlencoded({ extended: false })); // tell Express about the format used by the form data.
 
 app.use(session({
-  name: "launch-school-shopping-session-id",
+  cookie: {
+    httpOnly: true,
+    maxAge: 31 * 24 * 60 * 60 * 1000, // 31 days in milliseconds
+    path: "/",
+    secure: false,
+  },
+  name: "launch-school-shopping-app-session-id",
+  secret: "this is not very secure",
+  store: new LokiStore({}),
   resave: false,
   saveUninitialized: true,
-  secret: "this is not very secure",
 }));
 
 app.use(flash());
+
+// Set up persistent session data
+app.use((req, res, next) => {
+  let shoppingLists = [];
+
+  if ("shoppingLists" in req.session) {
+    req.session.shoppingLists.forEach(shoppingList => {
+      shoppingLists.push(ShoppingList.makeShoppingList(shoppingList));
+    });
+  }
+
+  req.session.shoppingLists = shoppingLists;
+  next();
+});
 
 // Extract session info
 // res.locals allows us to pass data (like flash messages) to the view for the current request
@@ -40,14 +60,14 @@ app.use((req, res, next) => {
 
 // Find a shopping list with the indicated ID. Returns `undefined` if not found.
 // Note that the `shoppingListId` must be numeric.
-const loadShoppingList = (shoppingListId) => {
-  return shoppingLists.find(list => list.id === shoppingListId);
+const loadShoppingList = (shoppingListId, req) => {
+  return req.session.shoppingLists.find(list => list.id === shoppingListId);
 }
 
 // Find the specific item in the shopping List. Returns `undefined` if not found.
 // Note that the `itemId` must be numeric.
-const loadItem = (itemId, shoppingListId) => {
-  let shoppingList = loadShoppingList(shoppingListId, shoppingLists);
+const loadItem = (itemId, shoppingListId, req) => {
+  let shoppingList = loadShoppingList(shoppingListId, req);
   if (shoppingList) {
     return shoppingList.findById(itemId);
   } else {
@@ -63,10 +83,9 @@ app.get("/", (req, res) => { // primary route for this application
 // Render the list of shopping lists
 app.get("/lists", (req, res) => {
   res.render("lists", {
-    shoppingLists: sortShoppingLists(shoppingLists),
+    shoppingLists: sortShoppingLists(req.session.shoppingLists),
   });
 });
-
 // Render new shopping list page
 app.get("/lists/new", (req, res) => {
   res.render("new-list");
@@ -75,7 +94,7 @@ app.get("/lists/new", (req, res) => {
 // render the specific shopping list 
 app.get("/lists/:shoppingListId", (req, res, next) => {
   let listId = +req.params.shoppingListId; // type conversion be careful!
-  let shoppingList = loadShoppingList(+listId, shoppingLists);
+  let shoppingList = loadShoppingList(+listId, req);
   if (shoppingList === undefined) {
     next(new Error(`Not found.`));
   } else {
@@ -88,7 +107,7 @@ app.get("/lists/:shoppingListId", (req, res, next) => {
 
 app.get("/lists/:shoppingListId/edit", (req, res, next) => {
   let {shoppingListId} = {...req.params};
-  let shoppingList = loadShoppingList(+shoppingListId);
+  let shoppingList = loadShoppingList(+shoppingListId, req);
   if(!shoppingList) {
     next(new Error("Not found."));
   } else {
@@ -99,7 +118,7 @@ app.get("/lists/:shoppingListId/edit", (req, res, next) => {
 });
 
 // Create a new shopping list
-app.post("/lists",
+app.post("/lists", 
   // validation middleware placed in an array
   [
     body("shoppingListTitle") // validating the shoppingListTitle field of request body
@@ -108,9 +127,9 @@ app.post("/lists",
     .withMessage("The list title is required.") // withMessage defines an err msg when validation condition isn't met.
     .isLength({ max: 100 })
     .withMessage("List title must be betweeen 1 and 100 characters.")
-    .custom(title => { // custom validator
-      let duplicate = shoppingLists.find(list => list.title === title);
-      return duplicate === undefined; 
+    .custom((title, {req }) => { // custom validator
+      let duplicate = req.session.shoppingLists.find(list => list.title === title);
+      return duplicate === undefined;
     })
     .withMessage("List title must be unique."), // err msg if error found in custom validator
   ],
@@ -118,12 +137,13 @@ app.post("/lists",
     let errors = validationResult(req);
     if (!errors.isEmpty()) {
       errors.array().forEach(message => req.flash("error", message.msg));
+      console.log(req.session.shoppingLists);
       res.render("new-list", {
         flash: req.flash(),
         shoppingListTitle: req.body.shoppingListTitle,
       });
     } else {
-      shoppingLists.push(new ShoppingList(req.body.shoppingListTitle));
+      req.session.shoppingLists.push(new ShoppingList(req.body.shoppingListTitle));
       req.flash("success", "The shopping list has been created.");
       res.redirect("/lists");
     }
@@ -133,7 +153,7 @@ app.post("/lists",
 // Toggle item completion status
 app.post("/lists/:shoppingListId/items/:itemId/toggle", (req, res, next) => {
   let {shoppingListId, itemId } = {...req.params}; // obj destructuring & spread syntax
-  let item = loadItem(+itemId, +shoppingListId); // type conversion be careful!
+  let item = loadItem(+itemId, +shoppingListId, req); // type conversion be careful!
   
   if (!item) {
     next(new Error(`Not found.`));
@@ -153,7 +173,7 @@ app.post("/lists/:shoppingListId/items/:itemId/toggle", (req, res, next) => {
 // delete an item from a shopping list
 app.post("/lists/:shoppingListId/shopping/:itemId/destroy", (req, res, next) => {
   let { shoppingListId, itemId } = { ...req.params };
-  let shoppingList = loadShoppingList(+shoppingListId);
+  let shoppingList = loadShoppingList(+shoppingListId, req);
   if (!shoppingList) {
     next(new Error("Not found."));
   } else {
@@ -172,7 +192,7 @@ app.post("/lists/:shoppingListId/shopping/:itemId/destroy", (req, res, next) => 
 // complete all of the items in a shopping list.
 app.post("/lists/:shoppingListId/complete_all", (req, res, next) => {
   let {shoppingListId} = {...req.params};
-  let shoppingList = loadShoppingList(+shoppingListId); // again remember to convert string to number.
+  let shoppingList = loadShoppingList(+shoppingListId, req); // again remember to convert string to number.
   if (!shoppingList) {
     next(new Error("Not found."));
   } else {
@@ -198,7 +218,7 @@ app.post("/lists/:shoppingListId/shopping",
   // main route handler
   (req, res, next) => {
     let { shoppingListId } = { ...req.params };
-    let shoppingList = loadShoppingList(+shoppingListId);
+    let shoppingList = loadShoppingList(+shoppingListId, req);
 
     if (!shoppingList) {
       next(new Error("Not found."));
@@ -226,7 +246,8 @@ app.post("/lists/:shoppingListId/shopping",
 // delete List button
 app.post("/lists/:shoppingListId/destroy", (req, res, next) => {
   let shoppingListId = req.params.shoppingListId;
-  let shoppingList = loadShoppingList(+shoppingListId);
+  let shoppingList = loadShoppingList(+shoppingListId, req);
+  let shoppingLists = req.session.shoppingLists;
   
   if(!shoppingList) {
     next(new Error("Not found."));
@@ -249,8 +270,8 @@ app.post("/lists/:shoppingListId/edit",
       .bail()
       .isLength({ max: 100 })
       .withMessage("Title must be between 1 and 100 characters.")
-      .custom(title => {
-        let duplicate = shoppingLists.find(list => list.title == title);
+      .custom((title, { req }) => {
+        let duplicate = req.session.shoppingLists.find(list => list.title == title);
         return duplicate === undefined;
       })
       .withMessage("Shopping list title must be unique."),
@@ -258,7 +279,7 @@ app.post("/lists/:shoppingListId/edit",
   
   (req, res, next) => {
     let shoppingListId = req.params.shoppingListId;
-    let shoppingList = loadShoppingList(+shoppingListId);
+    let shoppingList = loadShoppingList(+shoppingListId, req);
     if (!shoppingList) {
       next(new Error("Not found."));
     } else {
