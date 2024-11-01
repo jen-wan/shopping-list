@@ -40,7 +40,7 @@ app.use((req, res, next) => {
 
 // Find a shopping list with the indicated ID. Returns `undefined` if not found.
 // Note that the `shoppingListId` must be numeric.
-const loadShoppingList = (shoppingListId, shoppingLists) => {
+const loadShoppingList = (shoppingListId) => {
   return shoppingLists.find(list => list.id === shoppingListId);
 }
 
@@ -86,6 +86,18 @@ app.get("/lists/:shoppingListId", (req, res, next) => {
   }
 });
 
+app.get("/lists/:shoppingListId/edit", (req, res, next) => {
+  let {shoppingListId} = {...req.params};
+  let shoppingList = loadShoppingList(+shoppingListId);
+  if(!shoppingList) {
+    next(new Error("Not found."));
+  } else {
+    res.render("edit-list", {
+      shoppingList: shoppingList,
+    });
+  }
+});
+
 // Create a new shopping list
 app.post("/lists",
   // validation middleware placed in an array
@@ -97,7 +109,7 @@ app.post("/lists",
     .isLength({ max: 100 })
     .withMessage("List title must be betweeen 1 and 100 characters.")
     .custom(title => { // custom validator
-      let duplicate = todoLists.find(list => list.title === title);
+      let duplicate = shoppingLists.find(list => list.title === title);
       return duplicate === undefined; 
     })
     .withMessage("List title must be unique."), // err msg if error found in custom validator
@@ -141,7 +153,7 @@ app.post("/lists/:shoppingListId/items/:itemId/toggle", (req, res, next) => {
 // delete an item from a shopping list
 app.post("/lists/:shoppingListId/shopping/:itemId/destroy", (req, res, next) => {
   let { shoppingListId, itemId } = { ...req.params };
-  let shoppingList = loadShoppingList(+shoppingListId, shoppingLists);
+  let shoppingList = loadShoppingList(+shoppingListId);
   if (!shoppingList) {
     next(new Error("Not found."));
   } else {
@@ -160,7 +172,7 @@ app.post("/lists/:shoppingListId/shopping/:itemId/destroy", (req, res, next) => 
 // complete all of the items in a shopping list.
 app.post("/lists/:shoppingListId/complete_all", (req, res, next) => {
   let {shoppingListId} = {...req.params};
-  let shoppingList = loadShoppingList(+shoppingListId, shoppingLists); // again remember to convert string to number.
+  let shoppingList = loadShoppingList(+shoppingListId); // again remember to convert string to number.
   if (!shoppingList) {
     next(new Error("Not found."));
   } else {
@@ -174,31 +186,96 @@ app.post("/lists/:shoppingListId/complete_all", (req, res, next) => {
 app.post("/lists/:shoppingListId/shopping", 
   // validation chains
   [
-    body()
+    body("itemTitle")
+      .trim()
+      .isLength({ min: 1})
+      .withMessage("The item title is required.")
+      .bail()
+      .isLength({ max: 100})
+      .withMessage("Title must be between 1 and 100 characters.")
   ],
-  // error handling middleware
-  (req, res, next) => {
-    let errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      errors.array().forEach(error => req.flash(error.msg));
-    } else {
-      next();
-    }
-  }, 
 
   // main route handler
-  (req, res) => {
+  (req, res, next) => {
     let { shoppingListId } = { ...req.params };
-    let title = req.body.itemTitle;
-    let shoppingList = loadShoppingList(+shoppingListId, shoppingLists);
+    let shoppingList = loadShoppingList(+shoppingListId);
 
     if (!shoppingList) {
       next(new Error("Not found."));
     } else {
-      let item = new Item(title);
-      shoppingList.add(item);
+      let errors = validationResult(req);
 
-      res.redirect(`/lists/${shoppingListId}`);
+      if (!errors.isEmpty()) {
+        errors.array().forEach(error => req.flash("error", error.msg));
+        res.render("list", {
+          flash: req.flash(), // not sure why we need this line.
+          shoppingList: shoppingList,
+          items: sortItems(shoppingList),
+          itemTitle: req.body.itemTitle,
+        });
+      } else {
+        let item = new Item(req.body.itemTitle);
+        shoppingList.add(item);
+        req.flash("success", "A new item was created.")
+        res.redirect(`/lists/${shoppingListId}`);
+      }
+    }
+  }
+);
+
+// delete List button
+app.post("/lists/:shoppingListId/destroy", (req, res, next) => {
+  let shoppingListId = req.params.shoppingListId;
+  let shoppingList = loadShoppingList(+shoppingListId);
+  
+  if(!shoppingList) {
+    next(new Error("Not found."));
+  } else {
+    let index = shoppingLists.indexOf(shoppingList);
+    shoppingLists.splice(index, 1);
+
+    req.flash("success", "Shopping list has been deleted.");
+    res.redirect("/lists");
+  }
+});
+
+// create a new list title 
+app.post("/lists/:shoppingListId/edit", 
+  [
+    body("shoppingListTitle")
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Title is required.")
+      .bail()
+      .isLength({ max: 100 })
+      .withMessage("Title must be between 1 and 100 characters.")
+      .custom(title => {
+        let duplicate = shoppingLists.find(list => list.title == title);
+        return duplicate === undefined;
+      })
+      .withMessage("Shopping list title must be unique."),
+  ],
+  
+  (req, res, next) => {
+    let shoppingListId = req.params.shoppingListId;
+    let shoppingList = loadShoppingList(+shoppingListId);
+    if (!shoppingList) {
+      next(new Error("Not found."));
+    } else {
+      let errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        errors.array().forEach(error => req.flash("error", error.msg));
+
+        res.render("edit-list", {
+          flash: req.flash(), 
+          shoppingList, 
+          shoppingListTitle: req.body.shoppingListTitle
+        });
+      } else {
+        shoppingList.setTitle(req.body.shoppingListTitle);
+        req.flash("success", "Title name was changed.");
+        res.redirect(`/lists/${shoppingListId}`);
+      }
     }
   }
 );

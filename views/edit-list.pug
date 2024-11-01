@@ -1,1 +1,23 @@
 extends layout
+
+block main
+  section#items
+    header
+      h2 Editing '#{shoppingList.title}'
+      ul
+        li
+          form.delete(action=`/lists/${shoppingList.id}/destroy` method="post")
+            button.delete(type="submit") Delete List
+
+  form(action=`/lists/${shoppingList.id}/edit` method="post")
+    dl
+      dt
+        label(for="shoppingListTitle") Enter the new title for the list:
+      dd
+        input(type="text"
+              name="shoppingListTitle"
+              placeholder="List Title"
+              value=shoppingListTitle || shoppingList.title)
+    fieldset.actions
+      input(type="submit" value="Save")
+      a(href=`/lists/${shoppingList.id}`) Cancel
